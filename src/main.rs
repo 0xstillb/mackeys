@@ -39,6 +39,7 @@ fn main() -> std::process::ExitCode {
         Command::OpenConfigDir => cmd_open_config(&config_path),
         Command::Capture => cmd_capture(),
         Command::IconPreview => cmd_icon_preview(),
+        Command::IconExport { ico } => cmd_icon_export(&ico),
     };
 
     match result {
@@ -267,5 +268,12 @@ fn cmd_icon_preview() -> Result<()> {
     let path = std::env::temp_dir().join("mackeys-icon.png");
     win::icon::preview_png(&path)?;
     println!("บันทึกภาพไอคอนแล้ว: {}", path.display());
+    Ok(())
+}
+
+fn cmd_icon_export(ico: &Path) -> Result<()> {
+    win::util::attach_parent_console();
+    win::icon::export_ico(ico)?;
+    println!("บันทึกไอคอน .ico แล้ว: {}", ico.display());
     Ok(())
 }

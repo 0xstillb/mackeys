@@ -214,12 +214,12 @@ mod tests {
         let up = key(0x41, true);
 
         assert_eq!(
-            unsafe { down.Anonymous.ki.dwExtraInfo } as usize,
+            unsafe { down.Anonymous.ki.dwExtraInfo },
             INJECT_PASS_MARKER,
             "คีย์ที่ inject ต้องมี marker ปล่อยผ่าน"
         );
         assert_eq!(
-            unsafe { up.Anonymous.ki.dwExtraInfo } as usize,
+            unsafe { up.Anonymous.ki.dwExtraInfo },
             INJECT_PASS_MARKER,
             "คีย์ที่ปล่อยก็ต้องมี marker เหมือนกัน"
         );

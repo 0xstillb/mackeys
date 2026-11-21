@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'แท็กที่จะปล่อย (เช่น v0.2.0)'
+        required: true
+        default: 'v0.2.0'
+      publish:
+        description: 'ปล่อย Release จริงหรือไม่ (ปิดไว้ตอนทดสอบ)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: สร้าง installer (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: ดึงโค้ด
+        uses: actions/checkout@v4
+
+      - name: ติดตั้ง Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: ติดตั้ง Inno Setup 6
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe'
+          $exe = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+          Invoke-WebRequest -Uri $url -OutFile $exe
+          Start-Process -FilePath $exe -Wait `
+            -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', '/SP-'
+          $iscc = Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) { throw "หา ISCC.exe ไม่พบที่ $iscc" }
+          "ISCC=$iscc" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: เทสต์
+        run: cargo test --release
+
+      - name: build
+        run: cargo build --release
+
+      - name: คอมไพล์ installer
+        shell: pwsh
+        run: |
+          & $env:ISCC 'installer\mackeys.iss'
+          if ($LASTEXITCODE -ne 0) { throw "ISCC ล้มเหลว (exit=$LASTEXITCODE)" }
+          Get-ChildItem dist | Format-Table Name, Length -AutoSize
+
+      - name: เก็บไฟล์เป็น artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mackeys-installer
+          path: |
+            dist/MacKeys-*-setup.exe
+            target/release/mackeys.exe
+          if-no-files-found: error
+
+      - name: แนบไฟล์ใน Release
+        if: github.ref_type == 'tag' || inputs.publish == true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: |
+            dist/MacKeys-*-setup.exe
+            target/release/mackeys.exe
+          generate_release_notes: true

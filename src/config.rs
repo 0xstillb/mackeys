@@ -15,7 +15,7 @@ pub struct Config {
 }
 
 /// ตั้งค่า "โหมด Mac"
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Mac {
     /// เปิด/ปิดโหมด Mac — ปุ่ม `Alt` ฝั่งซ้ายจะทำหน้าที่เป็น `Ctrl` (⌘ ของ macOS)
@@ -23,12 +23,6 @@ pub struct Mac {
     /// เมื่อเปิด: Alt+C = ⌘C (copy), Alt+Space = สลับภาษา, Alt+Tab = สลับแอป,
     /// Alt+Shift+3 = จับภาพ — เหมือนกด ⌘ บน macOS
     pub enabled: bool,
-}
-
-impl Default for Mac {
-    fn default() -> Self {
-        Self { enabled: false }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

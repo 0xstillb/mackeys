@@ -210,10 +210,10 @@ pub fn alias_lang_id(alias: &str) -> Option<u32> {
         "th" | "th-th" | "tha" | "thai" => 0x041E,
         _ => {
             let hex = a.strip_prefix("0x").unwrap_or(&a);
-            if hex.len() == 4 || hex.len() == 8 {
-                if let Ok(v) = u32::from_str_radix(hex, 16) {
-                    return Some(v & 0xFFFF);
-                }
+            if (hex.len() == 4 || hex.len() == 8)
+                && let Ok(v) = u32::from_str_radix(hex, 16)
+            {
+                return Some(v & 0xFFFF);
             }
             return None;
         }

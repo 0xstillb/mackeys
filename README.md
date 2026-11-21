@@ -2,7 +2,8 @@
 
 คีย์ลัดสไตล์ macOS สำหรับ Windows — เขียนด้วย Rust
 
-[![Release v0.1.0](https://img.shields.io/badge/release-v0.1.0-blue)](https://github.com/0xstillb/mackeys/releases)
+[![Release v0.2.0](https://img.shields.io/badge/release-v0.2.0-blue)](https://github.com/0xstillb/mackeys/releases)
+[![CI](https://github.com/0xstillb/mackeys/actions/workflows/ci.yml/badge.svg)](https://github.com/0xstillb/mackeys/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 | macOS | บน Windows (MacKeys) | ทำงานแบบ |
@@ -121,12 +122,23 @@ powershell -ExecutionPolicy Bypass -File .\scripts\alt-as-cmd.ps1 -Disable
 
 ## การติดตั้ง
 
-```powershell
-cargo build --release
-# ไฟล์โปรแกรมอยู่ที่ target\release\mackeys.exe
-```
+### วิธีที่ 1: installer (แนะนำ)
 
-ก๊อป `mackeys.exe` ไปไว้ที่ไหนก็ได้ที่อยาก แล้วรัน — โปรแกรมจะไปอยู่ใน system tray
+ดาวน์โหลด `MacKeys-<เวอร์ชัน>-setup.exe` จากหน้า [Releases](https://github.com/0xstillb/mackeys/releases) แล้วดับเบิลคลิก
+
+- ติดตั้งแบบ **ต่อผู้ใช้** — ไม่ขึ้นหน้าต่าง UAC ไฟล์ไปอยู่ที่ `%LOCALAPPDATA%\Programs\MacKeys`
+- ได้ทางลัดใน Start Menu และมีรายการใน "แอปที่ติดตั้ง" ของ Windows (ถอนได้จากตรงนั้น)
+- เลือกได้ตอนติดตั้งว่า จะให้เปิดพร้อม Windows หรือไม่ และจะสร้างไอคอนบนเดสก์ท็อปหรือไม่
+- ไฟล์ตั้งค่าของผู้ใช้ (`%APPDATA%\MacKeys\config.toml`) **ไม่ถูกลบ** ตอนถอนการติดตั้ง
+
+> ตัวโปรแกรม **ไม่ต้องใช้สิทธิ์ Administrator**
+> ใช้ low-level keyboard hook (`WH_KEYBOARD_LL`) ที่ผู้ใช้ทั่วไปเรียกได้
+> (คำว่า "ต้องรันด้วยสิทธิ์ Administrator" ในหัวข้อ [ทางเลือกแบบไม่ใช้ hook](#ทางเลือกแบบไม่ใช้-hook-เสถียรกว่า)
+> เป็นของสคริปต์ Scancode Map ไม่ใช่ของตัวแอป)
+
+### วิธีที่ 2: แบบ portable (ไม่ต้องติดตั้ง)
+
+ดาวน์โหลด `mackeys.exe` จากหน้า [Releases](https://github.com/0xstillb/mackeys/releases) แล้วก๊อปไปวางที่ไหนก็ได้ที่อยาก แล้วรัน — โปรแกรมจะไปอยู่ใน system tray
 (ไอคอนคือกล่องสีน้ำเงินมนๆ ที่มีปุ่มคีย์บอร์ดสีขาว 3×3)
 
 ตั้งให้รันพร้อม Windows:
@@ -134,6 +146,21 @@ cargo build --release
 ```powershell
 .\mackeys.exe install-autostart
 ```
+
+### สร้าง installer เอง (นักพัฒนา)
+
+ต้องมี [Inno Setup 6](https://jrsoftware.org/isdl.php) แล้วรัน:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1
+# ได้ไฟล์ dist\MacKeys-<เวอร์ชัน>-setup.exe
+```
+
+สคริปต์ installer อยู่ที่ `installer/mackeys.iss` — เป็นแบบต่อผู้ใช้ ไม่ต้องขึ้น UAC
+ไอคอน `.ico` วาดจากโค้ดเดียวกับไอคอนใน tray (`mackeys icon-export assets\mackeys.ico`)
+และมีเทสต์คุมว่าไฟล์ที่ commit ไว้ตรงกับที่โค้ดวาดจริง
+
+เมื่อ push แท็ก `v*` GitHub Actions จะ build และแนบ `setup.exe` เข้า Release ให้เอง
 
 ## การใช้งานจาก system tray
 
@@ -303,6 +330,7 @@ mackeys uninstall-autostart  # ยกเลิกการรันพร้อ�
 mackeys open-config-dir      # เปิดโฟลเดอร์ config
 mackeys capture              # ทดสอบจับภาพทั้งจอ (บันทึกไฟล์ + clipboard) แล้วออก
 mackeys icon-preview         # เขียนภาพไอคอนลง %TEMP%\mackeys-icon.png
+mackeys icon-export <PATH>  # เขียนไอคอนเป็นไฟล์ .ico (ใช้ทำ installer)
 mackeys --config <PATH>      # ใช้ไฟล์ config ที่ระบุ
 ```
 
@@ -410,11 +438,26 @@ src/
    ├─ capture.rs          จับภาพหน้าจอ + clipboard
    ├─ hook.rs             โหมด Mac: แปลงปุ่ม Alt ให้เป็น Ctrl (WH_KEYBOARD_LL)
    ├─ hook_state.rs       state machine ของ hook (ล้วน ๆ ไม่ติดต่อ Win32 → เทสต์ได้)
-   ├─ icon.rs             สร้างไอคอน tray ตอนรัน
+   ├─ icon.rs             สร้างไอคอน tray ตอนรัน + export เป็นไฟล์ .ico สำหรับ installer
    └─ util.rs             ตัวช่วย Win32 ทั่วไป
 
+installer/
+└─ mackeys.iss           สคริปต์ Inno Setup (ติดตั้งต่อผู้ใช้ ไม่ต้องขึ้น UAC)
+
+assets/
+└─ mackeys.ico           ไอคอนสำหรับ installer/ทางลัด (วาดจากโค้ดเดียวกับไอคอนใน tray)
+
+.github/workflows/
+├─ ci.yml                fmt + clippy + test ทุก push/PR
+└─ release.yml           push แท็ก v* → build + สร้าง setup.exe + แนบใน Release
+
+tests/
+└─ installer_consistency.rs  คุมว่า installer ไม่หลุดจาก Cargo.toml และไฟล์ที่อ้างถึงมีจริง
+
 scripts/
-└─ alt-as-cmd.ps1        ทางเลือกแบบไม่ใช้ hook: แก้ Scancode Map ของ Windows
+├─ alt-as-cmd.ps1        ทางเลือกแบบไม่ใช้ hook: แก้ Scancode Map ของ Windows
+├─ build-installer.ps1   สร้าง setup.exe ด้วย Inno Setup
+└─ test-edit-shortcut.ps1  ทดสอบจริงว่าแก้คีย์ลัดผ่านหน้าต่างได้
 ```
 
 ## ไฟล์ที่โปรแกรมสร้าง

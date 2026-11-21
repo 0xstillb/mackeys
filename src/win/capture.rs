@@ -110,7 +110,7 @@ fn grab_virtual_screen() -> Result<RgbaImage> {
         }
 
         // GDI ให้สีเป็น BGR — สลับให้เป็น RGBA ตามที่ image crate ต้องการ
-        for px in buf.chunks_exact_mut(4) {
+        for px in buf.as_chunks_mut::<4>().0.iter_mut() {
             px.swap(0, 2);
         }
 

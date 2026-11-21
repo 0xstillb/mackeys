@@ -32,7 +32,7 @@ struct WinContext {
 
 // อยู่ใน thread เดียวกับ message loop เท่านั้น (ไม่ต้อง Sync)
 thread_local! {
-    static WIN: RefCell<Option<WinContext>> = RefCell::new(None);
+    static WIN: RefCell<Option<WinContext>> = const { RefCell::new(None) };
 }
 
 /// เปิด thread ที่ดูแล window + system tray + ลงทะเบียน hotkey

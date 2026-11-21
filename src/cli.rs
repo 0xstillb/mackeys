@@ -38,4 +38,10 @@ pub enum Command {
     Capture,
     /// บันทึกภาพไอคอนของโปรแกรมเป็น PNG (ตรวจว่าไอคอนวาดถูกต้องไหม)
     IconPreview,
+    /// บันทึกไอคอนของโปรแกรมเป็นไฟล์ .ico (ใช้ทำไอคอนของ installer และของตัวโปรแกรม)
+    IconExport {
+        /// path ของไฟล์ .ico ที่จะเขียน
+        #[arg(value_name = "PATH")]
+        ico: PathBuf,
+    },
 }

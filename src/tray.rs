@@ -151,10 +151,7 @@ fn separator_flags() -> MENU_ITEM_FLAGS {
 
 fn set_wide(buf: &mut [u16], text: &str) {
     for (i, slot) in buf.iter_mut().enumerate() {
-        *slot = match text.encode_utf16().nth(i) {
-            Some(c) => c,
-            None => 0,
-        };
+        *slot = text.encode_utf16().nth(i).unwrap_or_default();
     }
 }
 

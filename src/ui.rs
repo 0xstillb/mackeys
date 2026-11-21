@@ -648,9 +648,7 @@ pub fn nav_item(ui: &mut Ui, id: &str, icon: Icon, label: &str, selected: bool) 
             ui.painter().rect_filled(bar, 1.5, Palette::ACCENT);
         }
 
-        let text_color = if selected {
-            Palette::TEXT
-        } else if response.hovered() {
+        let text_color = if selected || response.hovered() {
             Palette::TEXT
         } else {
             Palette::TEXT_DIM
@@ -943,7 +941,7 @@ mod tests {
     /// พื้นที่เนื้อหาต้องมีที่หายใจจากแถบเมนู และคำนวณความกว้างได้ตรง
     #[test]
     fn content_has_breathing_room_from_the_side_menu() {
-        assert!(layout::CONTENT_PAD_X >= space::XL);
+        const { assert!(layout::CONTENT_PAD_X >= space::XL) };
         assert_eq!(
             layout::content_width(900.0),
             900.0 - layout::NAV_WIDTH - 2.0 * layout::CONTENT_PAD_X
